@@ -2,6 +2,8 @@
 Strategies and inspiration: Sentdex youtube
 @Ming T. Yu
 @2016
+
+Runs using quantopian.com
 """
 from quantopian.algorithm import attach_pipeline, pipeline_output
 from quantopian.pipeline import Pipeline
@@ -18,6 +20,7 @@ import numpy as np
 def initialize(context):
     """
     Called once at the start of the algorithm.
+    sets system's based commission value & trading frequency & nber of days to look back
     """   
     
     context.limit = 10
@@ -29,6 +32,10 @@ def initialize(context):
     set_commission(commission.PerShare(cost=0.005))  
     
 def before_trading_start(context):
+    """
+    Called each day before stock market opens.
+    picks and filther through stocks based on morningstar stock data and company's performance metrics
+    """   
     context.fundamentals = get_fundamentals(
         query(
             fundamentals.valuation_ratios.pb_ratio,
@@ -52,7 +59,9 @@ def before_trading_start(context):
  
 def rebalance(context,data):
     """
-    Called every minute.
+    Called every day
+    feeds data up to 200 days to random forest machine learning filther. value +1 assign if stock went up, 0 if stay same, -1 if went down.
+    machine learning then output prediction for next day. If +1, buys or keeps the stock if already bought, if -1 short stock or sell. Cutloss system and mean leverage acts as safety  
     """
     cash = context.portfolio.cash
     current_position = context.portfolio.positions
